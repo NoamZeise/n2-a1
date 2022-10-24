@@ -2,36 +2,57 @@ import socket
 import sys
 import helper
 
-#client app
+#==========client============
 
+def get_file(sock, name):
+    err = helper.recv_file(sock, name)
+    if err == None:
+        print("successfully got file from server")
+    return err
+
+def put_file(sock, name):
+    helper.read_binary(sock) #sync (with server.put_file())
+    err = helper.send_file(sock, name)
+    if err == None:
+        print("successfully put file on server")
+        return err
+    
 def send_request(srv_addr, req):
     try:
         cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv_addr_str = str(srv_addr)
-        print("Connecting to " + srv_addr_str + "... ")
         cli_sock.connect(srv_addr)
-        print("Connected")
+        print("Connected to " + srv_addr_str + "... ")
+        helper.send_string(req, cli_sock)
+        if req == "shutdown":
+            return 1
+        error = helper.parse_request(cli_sock, req, lambda sock: print(helper.read_string(sock), end=""), get_file, put_file)
+        if error != None:
+            print("Request Error: " + error)
     except Exception as e:
         print(e)
-    try:
-        bytes_sent = helper.message_to_socket(request, cli_sock)
-        if bytes_sent == 0:
-            print("0 bytes sent")
-            
-        bytes_read = helper.read_from_socket(cli_sock, srv_addr_str)
-        if bytes_read == 0:
-            print("0 bytes read")
-            
     finally:
         cli_sock.close()
-
+        
+#==========main============
 if len(sys.argv) < 3:
-    print("invalid args: need [address] [socket]")
+    print("invalid args: need [hostname] [port] [command]")
     exit(1)
 srv_addr = (sys.argv[1], int(sys.argv[2]))
-            
-while True:
-    request = input("request: ")
-    print("sending request")
-    send_request(srv_addr, request)
-    print("request complete")
+
+if len(sys.argv) == 3:
+    print("in interactive mode, [exit] to close")
+    while True:
+        request = input("\nrequest: ")
+        if request == "exit":
+            break
+        if send_request(srv_addr, request) == 1:
+            break
+    exit(1)
+
+cmd = sys.argv[3]
+i = 4
+while i < len(sys.argv):
+    cmd += " " + sys.argv[i]
+    i+=1
+send_request(srv_addr, cmd)
