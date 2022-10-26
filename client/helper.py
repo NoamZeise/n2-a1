@@ -14,11 +14,13 @@ def parse_request(sock, req, list_fn, get_fn, put_fn):
     else:
         if parts[0] == "list":
             return list_fn(sock)
-        if len(parts) == 1:
-            return get_string + ": missing filename arg"
         elif parts[0] == GET_CMD:
+            if len(parts) == 1:
+                return GET_CMD + ": missing filename arg"
             return get_fn(sock, req[len(GET_CMD) + 1:])
         elif parts[0] == PUT_CMD:
+            if len(parts) == 1:
+                return PUT_CMD + ": missing filename arg"
             return put_fn(sock, req[len(PUT_CMD) + 1:])
         else:
             return "unrecognized command.\nsupported commands:\n    list\n    get [filename]\n    put [filename]"

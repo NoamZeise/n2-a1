@@ -15,7 +15,7 @@ def put_file(sock, name):
     err = helper.send_file(sock, name)
     if err == None:
         print("successfully put file on server")
-        return err
+    return err
     
 def send_request(srv_addr, req):
     try:
